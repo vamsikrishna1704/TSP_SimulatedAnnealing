@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import math
 
 # Calculate distance between two points
-def distance(p1, p2):
-    return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+def distance(city1, city2):
+    return ((city1[0] - city2[0])**2 + (city1[1] - city2[1])**2)**0.5
 
 # Calculate the total distance of a path
 def total_distance(path, places):
@@ -22,42 +22,48 @@ def make_initial(num):
 def simulated_annealing(num, places, initial_temperature, final_temperature, cooling_rate, num_iterations):
     current_path = make_initial(num)
     current_distance = total_distance(current_path, places)
+    temperature = initial_temperature
     
     best_path = current_path
     best_distance = current_distance
     
     temperatures = []  # Store temperatures
     distances = []  # Store best distances
-    
-    for iteration in range(num_iterations):
 
-        temperature = initial_temperature / (1 + iteration)
+    while temperature > final_temperature:
 
-        if temperature < final_temperature:
-            break
+        print("Temperature :",temperature)
+       
+        for iteration in range(num_iterations):
+
+            
         
-        # Generate a neighboring solution by swapping two random cities
-        new_path = current_path.copy()
-        i, j = random.sample(range(num), 2)
-        new_path[i], new_path[j] = new_path[j], new_path[i]
-        new_distance = total_distance(new_path, places)
+            # Generate a neighboring solution by swapping two random cities
+            new_path = current_path.copy()
+            i, j = random.sample(range(num), 2)
+            new_path[i], new_path[j] = new_path[j], new_path[i]
+            new_distance = total_distance(new_path, places)
         
-        # Calculate the change in distance
-        delta_distance = new_distance - current_distance
+            print(" Iteration: ",iteration+1,"and Distance: ",new_distance)
+            # Calculate the change in distance
+            delta_distance = new_distance - current_distance
+          
+            # If the new path is better or accepted with a certain probability, update the current path
+            if delta_distance < 0 or random.random() < math.exp(-delta_distance / temperature):
+                current_path = new_path
+                current_distance = new_distance
         
-        # If the new path is better or accepted with a certain probability, update the current path
-        if delta_distance < 0 or random.random() < math.exp(-delta_distance / temperature):
-            current_path = new_path
-            current_distance = new_distance
+            # Update the best path if needed
+            if current_distance < best_distance:
+                best_path = current_path
+                best_distance = current_distance
+                print("Temperature at ",temperature," & ",iteration+1,"th Iteration with Distance: ",best_distance," is picked as current best distance")
         
-        # Update the best path if needed
-        if current_distance < best_distance:
-            best_path = current_path
-            best_distance = current_distance
-        
-        # Store temperature and best distance
-        temperatures.append(temperature)
-        distances.append(best_distance)
+            # Store temperature and best distance
+                temperatures.append(temperature)
+                distances.append(best_distance)
+
+        temperature -= cooling_rate
     
     return best_path, best_distance, temperatures, distances
 
@@ -83,6 +89,16 @@ def draw(path, places):
     plt.grid(True)
     plt.show()
 
+# Draw the distance vs temperature graph
+def draw_dist_vs_temp(temperatures, distances):
+    plt.figure()
+    plt.plot(temperatures, distances, marker='x', linestyle='-', color='r')
+    plt.title("Best Distance at Different Temperatures")
+    plt.xlabel("Temperature")
+    plt.ylabel("Best Distance")
+    plt.grid(True)
+    plt.show()
+
 # Ask for input and run the program
 num = int(input("Number of places: "))
 initial_temperature = float(input("Initial temperature: "))
@@ -93,14 +109,8 @@ num_iterations = int(input("Number of iterations: "))
 best_path, best_distance, temperatures, distances, places = main(num, initial_temperature,final_temperature, cooling_rate, num_iterations)
 
 print("Best Path:", best_path)
-print("Distance:", best_distance)
+print("Best Distance:", best_distance)
 
 draw(best_path, places)
 
-plt.figure()
-plt.plot(temperatures, distances, marker='o', linestyle='-', color='r')
-plt.title("Best Distance at Different Temperatures")
-plt.xlabel("Temperature")
-plt.ylabel("Best Distance")
-plt.grid(True)
-plt.show()
+draw_dist_vs_temp(temperatures, distances)
